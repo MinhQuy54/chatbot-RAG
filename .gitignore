@@ -1,0 +1,65 @@
+
+# --- Python / CPython ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- Environment Variables (QUAN TRỌNG) ---
+# Không bao giờ push file này lên GitHub vì nó chứa DB_URL của bạn
+.env
+.env.local
+.env.*
+
+# --- Docker ---
+.docker/
+# Nếu bạn muốn lưu dữ liệu DB local nhưng không muốn push lên Git
+mysql_data/
+qdrant_storage/
+
+# --- Project Specific (RAG/Data) ---
+# Loại bỏ các file dữ liệu đã extract hoặc file log lớn
+data/*.jsonl
+data/*.csv
+data/*.json
+!data/.gitkeep
+pipeline/__pycache__/
+app/__pycache__/
+
+# --- OS Specific (Mac & Windows) ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- Editors (VS Code / PyCharm) ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Logs ---
+*.log
+logs/
