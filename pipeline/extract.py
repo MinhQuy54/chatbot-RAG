@@ -21,7 +21,7 @@ def extract_data_to_json(output_file):
     try:
         with engine.connect() as connection:
             # Dùng .mappings() để truy cập row['column_name'] cho dễ
-            query = text("SELECT id, name, description, price, category_id FROM app_product WHERE category_id = 1")
+            query = text("SELECT id, name, description, price, category_id FROM app_product")
             result = connection.execute(query).mappings() 
             
             count = 0

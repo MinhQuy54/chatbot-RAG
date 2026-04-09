@@ -1,5 +1,4 @@
 import logging
-from venv import logger
 
 from fastapi import FastAPI
 
