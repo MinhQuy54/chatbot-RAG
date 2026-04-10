@@ -1,6 +1,7 @@
 
-import logging,os
+import logging,os, asyncio
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
@@ -23,24 +24,37 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger(__name__)
-def call_gemini(prompt):
+async def call_gemini(prompt):
     models = [
         "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-flash-lite-latest"
     ]
-
+    
     for model_name in models:
         try:
-            response = client.models.generate_content(
+           
+            response = client.models.generate_content_stream(
                 model=model_name,
                 contents=prompt
             )
-            return response.text
-        except Exception as e:
-            print(f"Lỗi với model {model_name}: {e}")
+            
+           
+            found_content = False
+            for chunk in response:
+                if chunk.text:
+                    found_content = True
+                    yield chunk.text
+                    await asyncio.sleep(0.01)
+            
+            if found_content:
+                return
 
-    return "Xin lỗi, hệ thống AI đang quá tải. Vui lòng thử lại sau."
+        except Exception as e:
+            logger.error(f"Lỗi model {model_name}: {str(e)}")
+            continue 
+            
+    yield "Hiện tại hệ thống AI đang quá tải. Quý vui lòng thử lại sau vài giây nhé!"
 class ChatRequest(BaseModel):
     message: str
 
@@ -70,10 +84,11 @@ async def chat_with_veggie(request : ChatRequest):
             p = hit.payload
             if p is not None:
                 m = p.get("metadata", {})
+                stock_info = f" - Tồn kho: {m.get('stock', 0)}" if 'stock' in m else ""
                 if m.get("type") == "policy":
                     context_data += f"[CHÍNH SÁCH]: {p.get('content')}\n"
                 else:
-                    context_data += f"[SẢN PHẨM]: {p.get('content')} - Giá: {m.get('price', 'Liên hệ')} VNĐ\n"
+                    context_data += f"[SẢN PHẨM]: {p.get('content')} - Giá: {m.get('price', 'Liên hệ')} VNĐ{stock_info}\n"
                     
         prompt = f"""
             Bạn là một nhân viên tư vấn bán hàng thân thiện của cửa hàng rau củ Veggie.
@@ -87,11 +102,10 @@ async def chat_with_veggie(request : ChatRequest):
             Trả lời:
             """
     
-        answer = call_gemini(prompt)
-        return {
-            "answer": answer,
-            "debug_sources": [hit.payload.get('content') for hit in chat_results if hit.payload is not None]
-        }    
+        return StreamingResponse(
+            call_gemini(prompt), 
+            media_type="text/event-stream" 
+        )  
     except Exception as e:
         print(f"Lỗi hệ thống: {e}")
         raise HTTPException(status_code=500, detail="Bot đang bận, thử lại sau nhé Quý!")
