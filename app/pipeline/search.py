@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
-import google.generativeai as genai
+from google import genai
 import os
 
 load_dotenv()
@@ -10,8 +10,7 @@ if not api_key:
     raise ValueError("Chưa tìm thấy API_KEY trong file .env!")
 
 # config Gemini
-genai.configure(api_key=api_key)
-gemini_model = genai.GenerativeModel('models/gemini-1.5-flash')
+clients = genai.Client(api_key=api_key)
 
 
 COLLECTION_NAME = "veggie_products"
@@ -28,7 +27,7 @@ def run_search(query_text):
     response = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector, 
-        limit=3
+        limit=1
     )
     results = response.points
 
@@ -64,8 +63,12 @@ def run_search(query_text):
             """
         
         try:
-            model_instance = genai.GenerativeModel('gemini-1.5-flash')
-            response = model_instance.generate_content(prompt)
+            response = clients.models.generate_content(
+                model="gemini-1.5-flash-latest",
+                contents=prompt
+            )
+
+            answer = response.text
             print("\n[Chatbot Veggie]:", response.text)
         except Exception as e:
             print(f"\nLỗi gọi Gemini: {e}")
